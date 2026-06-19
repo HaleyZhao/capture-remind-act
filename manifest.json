@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Capture Remind Act",
+  "version": "1.0.0",
+  "description": "Capture thoughts. Get reminded. Take action.",
+  "permissions": ["sidePanel"],
+  "action": {
+    "default_title": "Capture Remind Act"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

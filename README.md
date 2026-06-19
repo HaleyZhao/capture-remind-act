@@ -53,3 +53,32 @@ The goal is to reduce mental load by creating a trusted place to quickly capture
 ## Philosophy
 
 Capture thoughts, let AI think through them, and get reminded when they matter.
+
+## Local Install
+
+Load the extension in Chrome for local development:
+
+1. Open Chrome and go to `chrome://extensions`
+2. Enable **Developer mode** (toggle in the top-right corner)
+3. Click **Load unpacked**
+4. Select the `capture-remind-act` project folder
+5. Click the extension icon in the toolbar to open the side panel
+
+### Reset sample data
+
+To start fresh with the default sample items, open the side panel, open DevTools (right-click → Inspect), and run:
+
+```js
+localStorage.removeItem('cra_items');
+location.reload();
+```
+
+## Project Files
+
+| File | Purpose |
+|------|---------|
+| `manifest.json` | Chrome Extension Manifest V3 config |
+| `background.js` | Opens side panel when the extension icon is clicked |
+| `sidepanel.html` | Side panel layout |
+| `sidepanel.css` | Styles |
+| `sidepanel.js` | App logic and localStorage persistence |
