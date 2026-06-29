@@ -78,6 +78,26 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function formatTime(iso) {
+  const date = new Date(iso);
+  const now = new Date();
+  const diffMins = Math.floor((now - date) / 60000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24 && date.toDateString() === now.toDateString()) {
+    return `${diffHours}h ago`;
+  }
+
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function renderBriefing() {
   const activeToday = state.today.filter((i) => !i.completed);
   const waiting = state.waiting;
@@ -123,6 +143,43 @@ function renderTodayList() {
   });
 
   empty.classList.toggle('empty-state--visible', items.length === 0);
+}
+
+function renderRecentList() {
+  const captures = [...state.captures].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  const list = document.getElementById('recent-list');
+  const empty = document.getElementById('recent-empty');
+  const count = document.getElementById('recent-count');
+
+  count.textContent = captures.length > 0 ? String(captures.length) : '';
+
+  list.innerHTML = '';
+  captures.forEach((entry) => {
+    list.appendChild(createRecentEntry(entry));
+  });
+
+  empty.classList.toggle('empty-state--visible', captures.length === 0);
+}
+
+function createRecentEntry(entry) {
+  const li = document.createElement('li');
+  li.className = 'recent-entry';
+  li.dataset.id = entry.id;
+
+  li.innerHTML = `
+    <span class="recent-entry__dot" aria-hidden="true"></span>
+    <div class="recent-entry__body">
+      <p class="recent-entry__text">${escapeHtml(entry.text)}</p>
+      <p class="recent-entry__time">${formatTime(entry.createdAt)}</p>
+    </div>
+    <button type="button" class="recent-entry__delete" aria-label="Delete">&times;</button>
+  `;
+
+  li.querySelector('.recent-entry__delete').addEventListener('click', () => deleteCapture(entry.id));
+
+  return li;
 }
 
 function renderWaitingList() {
@@ -173,13 +230,23 @@ function createItem(item, kind) {
 }
 
 function addCapture(text) {
-  state.captures.unshift({
+  const entry = {
     id: uid(),
     text: text.trim(),
     createdAt: new Date().toISOString(),
-  });
+  };
+  state.captures.unshift(entry);
   saveState();
-  renderBriefing();
+  render();
+
+  const el = document.querySelector(`#recent-list [data-id="${entry.id}"]`);
+  if (el) el.classList.add('recent-entry--new');
+}
+
+function deleteCapture(id) {
+  state.captures = state.captures.filter((c) => c.id !== id);
+  saveState();
+  render();
 }
 
 function toggleToday(id) {
@@ -216,6 +283,7 @@ function render() {
   renderBriefing();
   renderTodayList();
   renderWaitingList();
+  renderRecentList();
 }
 
 function initCaptureInput() {
