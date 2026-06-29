@@ -1,60 +1,49 @@
-const STORAGE_KEY = 'cra_items';
-const TYPE_LABELS = { thought: 'Thought', todo: 'Todo', waiting: 'Waiting On' };
+const STORAGE_KEY = 'cra_v2';
 
-const SAMPLE_ITEMS = [
-  {
-    id: crypto.randomUUID(),
-    text: 'Pick up groceries — milk, eggs, bread',
-    type: 'todo',
-    createdAt: daysAgo(0),
-    completed: false,
-  },
-  {
-    id: crypto.randomUUID(),
-    text: 'Schedule pediatrician appointment for Emma',
-    type: 'todo',
-    createdAt: daysAgo(0),
-    completed: false,
-  },
-  {
-    id: crypto.randomUUID(),
-    text: 'Reply to school about field trip permission slip',
-    type: 'todo',
-    createdAt: daysAgo(1),
-    completed: true,
-  },
-  {
-    id: crypto.randomUUID(),
-    text: 'Waiting on plumber to confirm kitchen leak repair',
-    type: 'waiting',
-    createdAt: daysAgo(2),
-    completed: false,
-  },
-  {
-    id: crypto.randomUUID(),
-    text: 'Waiting on partner to pick up dry cleaning',
-    type: 'waiting',
-    createdAt: daysAgo(1),
-    completed: false,
-  },
-  {
-    id: crypto.randomUUID(),
-    text: 'Remember to buy birthday gift for Grandma',
-    type: 'thought',
-    createdAt: daysAgo(0),
-    completed: false,
-  },
-  {
-    id: crypto.randomUUID(),
-    text: 'Idea: weekly family planning check-in on Sundays',
-    type: 'thought',
-    createdAt: daysAgo(1),
-    completed: false,
-  },
+const PLACEHOLDERS = [
+  'Drop a thought…',
+  'Buy bigger sleep sacks.',
+  'Mia liked the purple teether.',
+  'James will call insurance next week.',
+  'Interesting playground near Shoreline.',
+  'Need to renew passport in November.',
 ];
 
-let items = [];
-let selectedType = 'thought';
+const SAMPLE_STATE = {
+  captures: [
+    { id: uid(), text: 'Buy bigger sleep sacks.', createdAt: minsAgo(18) },
+    { id: uid(), text: 'Mia liked the purple teether.', createdAt: hoursAgo(3) },
+    { id: uid(), text: 'James will call insurance next week.', createdAt: hoursAgo(5) },
+    { id: uid(), text: 'Interesting playground near Shoreline.', createdAt: daysAgo(1) },
+    { id: uid(), text: 'Need to renew passport in November.', createdAt: daysAgo(2) },
+  ],
+  today: [
+    { id: uid(), text: 'Buy bigger sleep sacks', createdAt: minsAgo(18), completed: false },
+    { id: uid(), text: 'Look into passport renewal timeline', createdAt: daysAgo(2), completed: false },
+  ],
+  waiting: [
+    { id: uid(), text: 'James will call insurance', createdAt: hoursAgo(5), completed: false },
+  ],
+};
+
+let state = { captures: [], today: [], waiting: [] };
+let placeholderIndex = 0;
+
+function uid() {
+  return crypto.randomUUID();
+}
+
+function minsAgo(n) {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - n);
+  return d.toISOString();
+}
+
+function hoursAgo(n) {
+  const d = new Date();
+  d.setHours(d.getHours() - n);
+  return d.toISOString();
+}
 
 function daysAgo(n) {
   const d = new Date();
@@ -62,18 +51,18 @@ function daysAgo(n) {
   return d.toISOString();
 }
 
-function loadItems() {
+function loadState() {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
-    items = JSON.parse(stored);
-  } else {
-    items = SAMPLE_ITEMS;
-    saveItems();
+    state = JSON.parse(stored);
+    return;
   }
+  state = structuredClone(SAMPLE_STATE);
+  saveState();
 }
 
-function saveItems() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 function getGreeting() {
@@ -83,172 +72,144 @@ function getGreeting() {
   return 'Good evening';
 }
 
-function formatDate(iso) {
-  const date = new Date(iso);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return 'Today';
-  if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-function renderBriefing() {
-  const todos = items.filter((i) => i.type === 'todo');
-  const activeTodos = todos.filter((i) => !i.completed);
-  const waiting = items.filter((i) => i.type === 'waiting');
-  const thoughts = items
-    .filter((i) => i.type === 'thought')
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 3);
-
-  let summary = '';
-  if (activeTodos.length === 0 && waiting.length === 0) {
-    summary = 'Your lists are clear. A good day to capture new thoughts or plan ahead.';
-  } else {
-    const parts = [];
-    if (activeTodos.length > 0) {
-      parts.push(
-        `${activeTodos.length} task${activeTodos.length === 1 ? '' : 's'} on your Today list`
-      );
-    }
-    if (waiting.length > 0) {
-      parts.push(
-        `${waiting.length} item${waiting.length === 1 ? '' : 's'} waiting on others`
-      );
-    }
-    summary = `You have ${parts.join(' and ')}. Focus on what you can act on today.`;
-  }
-
-  let thoughtsHtml = '';
-  if (thoughts.length > 0) {
-    const thoughtItems = thoughts
-      .map((t) => `<p class="briefing__thought">${escapeHtml(t.text)}</p>`)
-      .join('');
-    thoughtsHtml = `
-      <div class="briefing__thoughts">
-        <p class="briefing__thoughts-label">Recent thoughts</p>
-        ${thoughtItems}
-      </div>`;
-  }
-
-  document.getElementById('briefing-content').innerHTML = `
-    <p class="briefing__greeting">${getGreeting()}</p>
-    <p class="briefing__summary">${summary}</p>
-    ${thoughtsHtml}
-  `;
-}
-
-function renderTodayList() {
-  const todos = items
-    .filter((i) => i.type === 'todo')
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const list = document.getElementById('today-list');
-  const empty = document.getElementById('today-empty');
-  const count = document.getElementById('today-count');
-
-  const active = todos.filter((i) => !i.completed).length;
-  count.textContent = active > 0 ? `${active} active` : '';
-
-  list.innerHTML = '';
-  todos.forEach((item) => {
-    list.appendChild(createTodoElement(item));
-  });
-
-  empty.classList.toggle('empty-state--visible', todos.length === 0);
-}
-
-function renderWaitingList() {
-  const waiting = items
-    .filter((i) => i.type === 'waiting')
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  const list = document.getElementById('waiting-list');
-  const empty = document.getElementById('waiting-empty');
-  const count = document.getElementById('waiting-count');
-
-  count.textContent = waiting.length > 0 ? `${waiting.length}` : '';
-
-  list.innerHTML = '';
-  waiting.forEach((item) => {
-    list.appendChild(createWaitingElement(item));
-  });
-
-  empty.classList.toggle('empty-state--visible', waiting.length === 0);
-}
-
-function createTodoElement(item) {
-  const li = document.createElement('li');
-  li.className = `item${item.completed ? ' item--done' : ''}`;
-  li.dataset.id = item.id;
-
-  li.innerHTML = `
-    <input type="checkbox" class="item__check" ${item.completed ? 'checked' : ''} aria-label="Mark done">
-    <div class="item__body">
-      <p class="item__text">${escapeHtml(item.text)}</p>
-      <p class="item__meta">${formatDate(item.createdAt)}</p>
-    </div>
-    <button type="button" class="item__delete" aria-label="Delete">&times;</button>
-  `;
-
-  li.querySelector('.item__check').addEventListener('change', () => toggleComplete(item.id));
-  li.querySelector('.item__delete').addEventListener('click', () => deleteItem(item.id));
-
-  return li;
-}
-
-function createWaitingElement(item) {
-  const li = document.createElement('li');
-  li.className = 'item item--waiting';
-  li.dataset.id = item.id;
-
-  li.innerHTML = `
-    <span class="item__indicator" aria-hidden="true"></span>
-    <div class="item__body">
-      <p class="item__text">${escapeHtml(item.text)}</p>
-      <p class="item__meta">${formatDate(item.createdAt)}</p>
-    </div>
-    <button type="button" class="item__delete" aria-label="Delete">&times;</button>
-  `;
-
-  li.querySelector('.item__delete').addEventListener('click', () => deleteItem(item.id));
-
-  return li;
-}
-
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
 }
 
-function addItem(text, type) {
-  items.unshift({
-    id: crypto.randomUUID(),
-    text: text.trim(),
-    type,
-    createdAt: new Date().toISOString(),
-    completed: false,
-  });
-  saveItems();
-  render();
+function renderBriefing() {
+  const activeToday = state.today.filter((i) => !i.completed);
+  const waiting = state.waiting;
+
+  let body = '';
+  if (activeToday.length === 0 && waiting.length === 0) {
+    body = 'A calm day ahead. Drop a thought whenever something comes to mind — no need to organize it yourself.';
+  } else {
+    const parts = [];
+    if (activeToday.length > 0) {
+      parts.push(
+        `${activeToday.length} thing${activeToday.length === 1 ? '' : 's'} for today`
+      );
+    }
+    if (waiting.length > 0) {
+      parts.push(
+        `${waiting.length} waiting on others`
+      );
+    }
+    body = `You have ${parts.join(' and ')}. Everything else is safely stored.`;
+  }
+
+  document.getElementById('briefing-content').innerHTML = `
+    <p class="briefing__greeting">${getGreeting()}</p>
+    <p class="briefing__body">${body}</p>
+  `;
 }
 
-function toggleComplete(id) {
-  const item = items.find((i) => i.id === id);
+function renderTodayList() {
+  const items = [...state.today].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  const list = document.getElementById('today-list');
+  const empty = document.getElementById('today-empty');
+  const count = document.getElementById('today-count');
+  const active = items.filter((i) => !i.completed).length;
+
+  count.textContent = active > 0 ? String(active) : '';
+
+  list.innerHTML = '';
+  items.forEach((item) => {
+    list.appendChild(createItem(item, 'today'));
+  });
+
+  empty.classList.toggle('empty-state--visible', items.length === 0);
+}
+
+function renderWaitingList() {
+  const items = [...state.waiting].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  const list = document.getElementById('waiting-list');
+  const empty = document.getElementById('waiting-empty');
+  const count = document.getElementById('waiting-count');
+
+  count.textContent = items.length > 0 ? String(items.length) : '';
+
+  list.innerHTML = '';
+  items.forEach((item) => {
+    list.appendChild(createItem(item, 'waiting'));
+  });
+
+  empty.classList.toggle('empty-state--visible', items.length === 0);
+}
+
+function createItem(item, kind) {
+  const li = document.createElement('li');
+  li.className = `item${item.completed ? ' item--done' : ''}`;
+  li.dataset.id = item.id;
+
+  if (kind === 'today') {
+    li.innerHTML = `
+      <input type="checkbox" class="item__check" ${item.completed ? 'checked' : ''} aria-label="Mark done">
+      <div class="item__body">
+        <p class="item__text">${escapeHtml(item.text)}</p>
+      </div>
+      <button type="button" class="item__delete" aria-label="Remove">&times;</button>
+    `;
+    li.querySelector('.item__check').addEventListener('change', () => toggleToday(item.id));
+    li.querySelector('.item__delete').addEventListener('click', () => dismissToday(item.id));
+  } else {
+    li.innerHTML = `
+      <span class="item__dot" aria-hidden="true"></span>
+      <div class="item__body">
+        <p class="item__text">${escapeHtml(item.text)}</p>
+      </div>
+      <button type="button" class="item__delete" aria-label="Remove">&times;</button>
+    `;
+    li.querySelector('.item__delete').addEventListener('click', () => dismissWaiting(item.id));
+  }
+
+  return li;
+}
+
+function addCapture(text) {
+  state.captures.unshift({
+    id: uid(),
+    text: text.trim(),
+    createdAt: new Date().toISOString(),
+  });
+  saveState();
+  renderBriefing();
+}
+
+function toggleToday(id) {
+  const item = state.today.find((i) => i.id === id);
   if (item) {
     item.completed = !item.completed;
-    saveItems();
+    saveState();
     render();
   }
 }
 
-function deleteItem(id) {
-  items = items.filter((i) => i.id !== id);
-  saveItems();
+function dismissToday(id) {
+  state.today = state.today.filter((i) => i.id !== id);
+  saveState();
   render();
+}
+
+function dismissWaiting(id) {
+  state.waiting = state.waiting.filter((i) => i.id !== id);
+  saveState();
+  render();
+}
+
+function showSuccess() {
+  const el = document.getElementById('capture-saved');
+  el.hidden = false;
+  clearTimeout(showSuccess._timer);
+  showSuccess._timer = setTimeout(() => {
+    el.hidden = true;
+  }, 2000);
 }
 
 function render() {
@@ -257,35 +218,39 @@ function render() {
   renderWaitingList();
 }
 
-function initCaptureForm() {
+function initCaptureInput() {
   const input = document.getElementById('capture-input');
-  const captureBtn = document.getElementById('capture-btn');
-  const typeButtons = document.querySelectorAll('.type-btn');
 
-  typeButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      selectedType = btn.dataset.type;
-      typeButtons.forEach((b) => b.classList.remove('type-btn--active'));
-      btn.classList.add('type-btn--active');
-    });
-  });
-
-  captureBtn.addEventListener('click', () => {
+  function submit() {
     const text = input.value.trim();
     if (!text) return;
-    addItem(text, selectedType);
+    addCapture(text);
     input.value = '';
+    input.style.height = 'auto';
+    showSuccess();
     input.focus();
-  });
+  }
 
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      captureBtn.click();
+      submit();
     }
   });
+
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = `${input.scrollHeight}px`;
+  });
+
+  setInterval(() => {
+    placeholderIndex = (placeholderIndex + 1) % PLACEHOLDERS.length;
+    if (document.activeElement !== input && !input.value) {
+      input.placeholder = PLACEHOLDERS[placeholderIndex];
+    }
+  }, 5000);
 }
 
-loadItems();
-initCaptureForm();
+loadState();
+initCaptureInput();
 render();

@@ -36,23 +36,26 @@ The goal is to reduce mental load by creating a trusted place to quickly capture
 
 ### Capture
 
-* Quick capture
-* Ask AI
+* Single input — drop any thought, no categories
+* Chronological log of everything captured
 
 ### Remind
 
 * Daily briefing
-* Waiting On list
-* Smart reminders
+* Surfaced "for you today" and "waiting on" lists (organized behind the scenes)
 
 ### Act
 
-* Today list
-* Task completion
+* Mark surfaced items done
+* Dismiss items that no longer matter
 
 ## Philosophy
 
-Capture thoughts, let AI think through them, and get reminded when they matter.
+**Capture first. Organize later.**
+
+The side panel is not a task manager or chatbot. It is a trusted personal operating system — you drop thoughts, and AI plus n8n workflows decide what becomes a log entry, task, reminder, or follow-up.
+
+You never choose whether something is a task, note, or memory. You just capture.
 
 ## Local Install
 
@@ -69,7 +72,7 @@ Load the extension in Chrome for local development:
 To start fresh with the default sample items, open the side panel, open DevTools (right-click → Inspect), and run:
 
 ```js
-localStorage.removeItem('cra_items');
+localStorage.removeItem('cra_v2');
 location.reload();
 ```
 

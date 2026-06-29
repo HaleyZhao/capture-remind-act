@@ -8,51 +8,43 @@
 </head>
 <body>
   <div class="app">
-    <header class="header">
-      <h1 class="header__title">Capture Remind Act</h1>
-      <p class="header__tagline">Capture · Remind · Act</p>
-    </header>
+    <main class="content">
+      <section class="section briefing" aria-labelledby="briefing-heading">
+        <h2 class="section__title" id="briefing-heading">Daily Briefing</h2>
+        <div class="briefing__card" id="briefing-content"></div>
+      </section>
 
-    <section class="section briefing" aria-labelledby="briefing-heading">
-      <h2 class="section__title" id="briefing-heading">Daily Briefing</h2>
-      <div class="briefing__card" id="briefing-content"></div>
-    </section>
-
-    <section class="section capture" aria-labelledby="capture-heading">
-      <h2 class="section__title" id="capture-heading">Quick Capture</h2>
-      <div class="capture__form">
-        <textarea
-          id="capture-input"
-          class="capture__input"
-          placeholder="What's on your mind? Capture a thought, task, or reminder…"
-          rows="3"
-        ></textarea>
-        <div class="capture__types" role="group" aria-label="Item type">
-          <button type="button" class="type-btn type-btn--active" data-type="thought">Thought</button>
-          <button type="button" class="type-btn" data-type="todo">Todo</button>
-          <button type="button" class="type-btn" data-type="waiting">Waiting On</button>
+      <section class="section" aria-labelledby="today-heading">
+        <div class="section__header">
+          <h2 class="section__title" id="today-heading">Today</h2>
+          <span class="section__count" id="today-count"></span>
         </div>
-        <button type="button" class="btn btn--primary" id="capture-btn">Capture</button>
-      </div>
-    </section>
+        <ul class="item-list" id="today-list"></ul>
+        <p class="empty-state" id="today-empty">Nothing for today.</p>
+      </section>
 
-    <section class="section today" aria-labelledby="today-heading">
-      <div class="section__header">
-        <h2 class="section__title" id="today-heading">Today</h2>
-        <span class="section__count" id="today-count"></span>
-      </div>
-      <ul class="item-list" id="today-list"></ul>
-      <p class="empty-state" id="today-empty">No tasks for today. Capture something above.</p>
-    </section>
+      <section class="section" aria-labelledby="waiting-heading">
+        <div class="section__header">
+          <h2 class="section__title" id="waiting-heading">Waiting On</h2>
+          <span class="section__count" id="waiting-count"></span>
+        </div>
+        <ul class="item-list" id="waiting-list"></ul>
+        <p class="empty-state" id="waiting-empty">Nothing waiting on others.</p>
+      </section>
+    </main>
 
-    <section class="section waiting" aria-labelledby="waiting-heading">
-      <div class="section__header">
-        <h2 class="section__title" id="waiting-heading">Waiting On</h2>
-        <span class="section__count" id="waiting-count"></span>
-      </div>
-      <ul class="item-list" id="waiting-list"></ul>
-      <p class="empty-state" id="waiting-empty">Nothing waiting on others right now.</p>
-    </section>
+    <footer class="capture-bar" aria-label="Drop a thought">
+      <p class="capture-bar__success" id="capture-saved" role="status" aria-live="polite" hidden>
+        Thought captured.
+      </p>
+      <textarea
+        id="capture-input"
+        class="capture-bar__input"
+        placeholder="Drop a thought…"
+        rows="3"
+        aria-label="Drop a thought"
+      ></textarea>
+    </footer>
   </div>
 
   <script src="sidepanel.js"></script>
