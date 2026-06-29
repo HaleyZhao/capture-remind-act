@@ -241,6 +241,43 @@ function addCapture(text) {
 
   const el = document.querySelector(`#recent-list [data-id="${entry.id}"]`);
   if (el) el.classList.add('recent-entry--new');
+
+  return entry;
+}
+
+async function sendToN8n(entry) {
+  if (!N8N_CAPTURE_WEBHOOK_URL) {
+    return null;
+  }
+
+  const response = await fetch(N8N_CAPTURE_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      client_id: entry.id,
+      message: entry.text,
+      captured_at: entry.createdAt,
+      source: 'chrome_side_panel',
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || 'Webhook request failed');
+  }
+
+  return data.message || null;
+}
+
+async function submitCapture(text) {
+  const entry = addCapture(text);
+
+  try {
+    const message = await sendToN8n(entry);
+    return message || 'Thought captured.';
+  } catch {
+    return 'Thought captured.';
+  }
 }
 
 function deleteCapture(id) {
@@ -270,13 +307,16 @@ function dismissWaiting(id) {
   render();
 }
 
-function showSuccess() {
+function showSuccess(message) {
   const el = document.getElementById('capture-saved');
+  el.textContent = message;
   el.hidden = false;
   clearTimeout(showSuccess._timer);
+  const duration = Math.min(6000, Math.max(2500, message.length * 40));
   showSuccess._timer = setTimeout(() => {
     el.hidden = true;
-  }, 2000);
+    el.textContent = 'Thought captured.';
+  }, duration);
 }
 
 function render() {
@@ -289,13 +329,13 @@ function render() {
 function initCaptureInput() {
   const input = document.getElementById('capture-input');
 
-  function submit() {
+  async function submit() {
     const text = input.value.trim();
     if (!text) return;
-    addCapture(text);
     input.value = '';
     input.style.height = 'auto';
-    showSuccess();
+    const message = await submitCapture(text);
+    showSuccess(message);
     input.focus();
   }
 

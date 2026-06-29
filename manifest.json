@@ -4,6 +4,10 @@
   "version": "1.0.0",
   "description": "Capture thoughts. Get reminded. Take action.",
   "permissions": ["sidePanel"],
+  "host_permissions": [
+    "https://*.app.n8n.cloud/*",
+    "http://localhost/*"
+  ],
   "action": {
     "default_title": "Capture Remind Act"
   },
